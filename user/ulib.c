@@ -2,6 +2,8 @@
 #include "kernel/stat.h"
 #include "kernel/fcntl.h"
 #include "user/user.h"
+#include "kernel/syscall.h"
+#include <stdarg.h>  // Para manejar argumentos variables
 
 //
 // wrapper so that it's OK if main() does not call exit().
@@ -144,4 +146,39 @@ void *
 memcpy(void *dst, const void *src, uint n)
 {
   return memmove(dst, src, n);
+}
+
+int
+getppid(void)
+{
+  return syscall(SYS_getppid);
+}
+
+// Implementación de la función syscall
+long
+syscall(int num, ...)
+{
+  // Manejar argumentos variables
+  va_list ap;
+  va_start(ap, num);
+
+  // Cargar los argumentos en los registros
+  register uint64 a0 asm("a0") = va_arg(ap, uint64);
+  register uint64 a1 asm("a1") = va_arg(ap, uint64);
+  register uint64 a2 asm("a2") = va_arg(ap, uint64);
+  register uint64 a3 asm("a3") = va_arg(ap, uint64);
+  register uint64 a4 asm("a4") = va_arg(ap, uint64);
+  register uint64 a5 asm("a5") = va_arg(ap, uint64);
+  
+  va_end(ap);
+
+  // Hacer la llamada al sistema
+  register uint64 syscall_num asm("a7") = num;
+  asm volatile("ecall"
+               : "+r" (a0)
+               : "r" (syscall_num), "r" (a1), "r" (a2), "r" (a3), "r" (a4), "r" (a5)
+               : "memory");
+
+  // Retornar el resultado
+  return a0;
 }

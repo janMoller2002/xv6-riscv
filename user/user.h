@@ -1,3 +1,10 @@
+#ifndef __USER_USER_H
+#define __USER_USER_H
+
+#include "kernel/types.h" // Asegúrate de que types.h defina uint
+
+typedef unsigned int uint; // Definición de uint si no está incluida desde kernel/types.h
+
 struct stat;
 
 // system calls
@@ -22,6 +29,8 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
+int getppid(void);
+long syscall(int, ...);
 
 // ulib.c
 int stat(const char*, struct stat*);
@@ -41,3 +50,5 @@ void *memcpy(void *, const void *, uint);
 // umalloc.c
 void* malloc(uint);
 void free(void*);
+
+#endif // __USER_USER_H

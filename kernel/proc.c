@@ -124,6 +124,8 @@ allocproc(void)
 found:
   p->pid = allocpid();
   p->state = USED;
+  p->priority = 0;
+  p->boost = 1;
 
   // Allocate a trapframe page.
   if((p->trapframe = (struct trapframe *)kalloc()) == 0){
@@ -441,44 +443,83 @@ wait(uint64 addr)
 //  - swtch to start running that process.
 //  - eventually that process transfers control
 //    via swtch back to the scheduler.
+// kernel/proc.c
+
 void
 scheduler(void)
 {
   struct proc *p;
+  struct proc *chosen_proc = 0;
   struct cpu *c = mycpu();
-
+  
   c->proc = 0;
   for(;;){
-    // The most recent process to run may have had interrupts
-    // turned off; enable them to avoid a deadlock if all
-    // processes are waiting.
+    // Enable interrupts to avoid deadlock.
     intr_on();
 
-    int found = 0;
+    chosen_proc = 0;
+    int highest_priority = 10; // Valores de prioridad están entre 0 y 9
+
+    // Loop sobre la tabla de procesos para encontrar el de mayor prioridad
     for(p = proc; p < &proc[NPROC]; p++) {
       acquire(&p->lock);
       if(p->state == RUNNABLE) {
-        // Switch to chosen process.  It is the process's job
-        // to release its lock and then reacquire it
-        // before jumping back to us.
-        p->state = RUNNING;
-        c->proc = p;
-        swtch(&c->context, &p->context);
-
-        // Process is done running for now.
-        // It should have changed its p->state before coming back.
-        c->proc = 0;
-        found = 1;
+        // Buscar el proceso con la mayor prioridad (menor valor numérico)
+        if(p->priority < highest_priority) {
+          highest_priority = p->priority;
+          if (chosen_proc != 0) {
+            // Solo liberar el bloqueo si ya había un proceso elegido previamente
+            release(&chosen_proc->lock);
+          }
+          chosen_proc = p;
+        } else {
+          release(&p->lock);
+        }
+      } else {
+        release(&p->lock);
       }
-      release(&p->lock);
     }
-    if(found == 0) {
-      // nothing to run; stop running on this core until an interrupt.
+
+    if(chosen_proc != 0) {
+      // Ejecutar el proceso con la mayor prioridad
+      chosen_proc->state = RUNNING;
+      c->proc = chosen_proc;
+
+      // Cambiar de contexto al proceso elegido
+      swtch(&c->context, &chosen_proc->context);
+
+      // El proceso ya terminó de ejecutarse
+      c->proc = 0;
+
+      // Liberar el bloqueo del proceso después de ejecutar
+      release(&chosen_proc->lock);
+
+      // Ajustar la prioridad y el boost de los procesos
+      for(p = proc; p < &proc[NPROC]; p++) {
+        acquire(&p->lock);
+        if(p->state != ZOMBIE && p->state != UNUSED) {
+          p->priority += p->boost;
+
+          // Cambiar boost cuando la prioridad alcance ciertos límites
+          if(p->priority >= 9) {
+            p->priority = 9;
+            p->boost = -1;
+          } else if(p->priority <= 0) {
+            p->priority = 0;
+            p->boost = 1;
+          }
+        }
+        release(&p->lock);
+      }
+
+    } else {
+      // No hay procesos listos para ejecutarse, esperar una interrupción
       intr_on();
       asm volatile("wfi");
     }
   }
 }
+
 
 // Switch to scheduler.  Must hold only p->lock
 // and have changed proc->state. Saves and restores

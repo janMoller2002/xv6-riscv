@@ -91,3 +91,47 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+uint64 sys_mprotect(void) {
+    uint64 addr;
+    int len;
+
+    // Llamamos a las funciones para obtener los valores de los argumentos
+    argaddr(0, &addr);
+    argint(1, &len);
+
+    struct proc *p = myproc();
+    for (int i = 0; i < len; i++) {
+        uint64 va = addr + i * PGSIZE;
+        pte_t *pte = walk(p->pagetable, va, 0);
+
+        if (pte == 0 || (*pte & PTE_V) == 0 || (*pte & PTE_U) == 0)
+            return -1;
+
+        // Desactiva el bit PTE_W para hacer la página de solo lectura
+        *pte &= ~PTE_W;
+    }
+    return 0;  // Retorna 0 si todo está correcto
+}
+
+uint64 sys_munprotect(void) {
+    uint64 addr;
+    int len;
+
+    // Llamamos a las funciones para obtener los valores de los argumentos
+    argaddr(0, &addr);
+    argint(1, &len);
+
+    struct proc *p = myproc();
+    for (int i = 0; i < len; i++) {
+        uint64 va = addr + i * PGSIZE;
+        pte_t *pte = walk(p->pagetable, va, 0);
+
+        if (pte == 0 || (*pte & PTE_V) == 0 || (*pte & PTE_U) == 0)
+            return -1;
+
+        // Activa el bit PTE_W para permitir escritura
+        *pte |= PTE_W;
+    }
+    return 0;  // Retorna 0 si todo está correcto
+}

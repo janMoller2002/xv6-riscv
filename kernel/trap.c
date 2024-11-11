@@ -63,15 +63,24 @@ usertrap(void)
     // an interrupt will change sepc, scause, and sstatus,
     // so enable only now that we're done with those registers.
     intr_on();
-
-    syscall();
-  } else if((which_dev = devintr()) != 0){
+  
+   syscall();
+} else if ((which_dev = devintr()) != 0) {
     // ok
-  } else {
-    printf("usertrap(): unexpected scause 0x%lx pid=%d\n", r_scause(), p->pid);
-    printf("            sepc=0x%lx stval=0x%lx\n", r_sepc(), r_stval());
-    setkilled(p);
-  }
+} else {
+    // Primero, manejamos las causas de excepciones conocidas.
+    if (r_scause() == 13 || r_scause() == 15 || r_scause() == 0xf) {  // Load/Store Access Fault, Store Protection Exception, or Unexpected Protection Fault
+        printf("usertrap(): memory protection violation pid=%d\n", p->pid);
+        printf("            sepc=0x%lx stval=0x%lx\n", r_sepc(), r_stval());
+        setkilled(p);
+    } else {
+        // Si no es una causa conocida, mostramos el mensaje de error.
+        printf("usertrap(): unexpected scause 0x%lx pid=%d\n", r_scause(), p->pid);
+        printf("            sepc=0x%lx stval=0x%lx\n", r_sepc(), r_stval());
+        setkilled(p);
+    }
+}
+
 
   if(killed(p))
     exit(-1);

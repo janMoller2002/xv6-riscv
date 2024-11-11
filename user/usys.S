@@ -105,3 +105,13 @@ uptime:
  li a7, SYS_uptime
  ecall
  ret
+.global mprotect
+mprotect:
+    li a7, SYS_mprotect  
+    ecall
+    ret
+.global munprotect
+munprotect:
+    li a7, SYS_munprotect
+    ecall
+    ret

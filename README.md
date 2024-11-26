@@ -78,7 +78,6 @@ El objetivo de esta entrega fue implementar un sistema de permisos en xv6 que pe
 
 ## 3. Dificultades Encontradas y Soluciones Implementadas
 
-
 1. **Error en la compilación de la syscall `chmod`:**
    - **Problema:** `argint` y `argstr` causaban errores porque `argint` no retorna valores.
    - **Solución:** Ajustamos la lógica para extraer los argumentos en pasos separados, evitando usar `argint` en condiciones.
@@ -98,5 +97,6 @@ El objetivo de esta entrega fue implementar un sistema de permisos en xv6 que pe
 Este proyecto implementa un sistema funcional de permisos en xv6, incluyendo un permiso especial inmutable. Los cambios se integraron correctamente en el kernel y el espacio de usuario, y las pruebas confirman que el comportamiento es el esperado.
 
 ---
+
 
 

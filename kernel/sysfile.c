@@ -503,3 +503,31 @@ sys_pipe(void)
   }
   return 0;
 }
+
+uint64
+sys_chmod(void)
+{
+    char path[MAXPATH];
+    int perm;
+
+    // Extraer los argumentos
+    if(argstr(0, path, MAXPATH) < 0)  // Verifica el argumento del path
+        return -1;
+
+    argint(1, &perm);  // Obtén el segundo argumento sin evaluarlo como una condición
+
+    // Lógica para cambiar permisos
+    struct inode *ip;
+    begin_op();
+    if((ip = namei(path)) == 0){  // Busca el archivo por su path
+        end_op();
+        return -1; // Error si el archivo no existe
+    }
+    ilock(ip);
+    ip->perm = perm;  // Cambia los permisos
+    iunlock(ip);
+    end_op();
+
+    return 0; // Éxito
+}
+

@@ -1,5 +1,5 @@
 
-user/_ln:     file format elf64-littleriscv
+user/_chmod:     file format elf64-littleriscv
 
 
 Disassembly of section .text:
@@ -15,38 +15,42 @@ main(int argc, char *argv[])
    2:	ec06                	sd	ra,24(sp)
    4:	e822                	sd	s0,16(sp)
    6:	1000                	addi	s0,sp,32
-  if(argc != 3){
+    if(argc != 3){
    8:	478d                	li	a5,3
-   a:	00f50d63          	beq	a0,a5,24 <main+0x24>
+   a:	00f50c63          	beq	a0,a5,22 <main+0x22>
    e:	e426                	sd	s1,8(sp)
-    fprintf(2, "Usage: ln old new\n");
-  10:	00001597          	auipc	a1,0x1
-  14:	88058593          	addi	a1,a1,-1920 # 890 <malloc+0x104>
-  18:	4509                	li	a0,2
-  1a:	694000ef          	jal	6ae <fprintf>
-    exit(1);
-  1e:	4505                	li	a0,1
-  20:	298000ef          	jal	2b8 <exit>
-  24:	e426                	sd	s1,8(sp)
-  26:	84ae                	mv	s1,a1
-  }
-  if(link(argv[1], argv[2]) < 0)
-  28:	698c                	ld	a1,16(a1)
-  2a:	6488                	ld	a0,8(s1)
-  2c:	2ec000ef          	jal	318 <link>
-  30:	00054563          	bltz	a0,3a <main+0x3a>
-    fprintf(2, "link %s %s: failed\n", argv[1], argv[2]);
-  exit(0);
-  34:	4501                	li	a0,0
-  36:	282000ef          	jal	2b8 <exit>
-    fprintf(2, "link %s %s: failed\n", argv[1], argv[2]);
-  3a:	6894                	ld	a3,16(s1)
-  3c:	6490                	ld	a2,8(s1)
-  3e:	00001597          	auipc	a1,0x1
-  42:	86a58593          	addi	a1,a1,-1942 # 8a8 <malloc+0x11c>
-  46:	4509                	li	a0,2
-  48:	666000ef          	jal	6ae <fprintf>
-  4c:	b7e5                	j	34 <main+0x34>
+        printf("usage: chmod <filename> <perm>\n");
+  10:	00001517          	auipc	a0,0x1
+  14:	88050513          	addi	a0,a0,-1920 # 890 <malloc+0x104>
+  18:	6c0000ef          	jal	6d8 <printf>
+        exit(1);
+  1c:	4505                	li	a0,1
+  1e:	29a000ef          	jal	2b8 <exit>
+  22:	e426                	sd	s1,8(sp)
+  24:	84ae                	mv	s1,a1
+    }
+
+    int perm = atoi(argv[2]); // Convierte el segundo argumento en un entero
+  26:	6988                	ld	a0,16(a1)
+  28:	19a000ef          	jal	1c2 <atoi>
+  2c:	85aa                	mv	a1,a0
+
+    if(chmod(argv[1], perm) < 0){ // Llama a la función chmod
+  2e:	6488                	ld	a0,8(s1)
+  30:	328000ef          	jal	358 <chmod>
+  34:	00054563          	bltz	a0,3e <main+0x3e>
+        printf("chmod: failed to change permissions for %s\n", argv[1]);
+    }
+
+    exit(0);
+  38:	4501                	li	a0,0
+  3a:	27e000ef          	jal	2b8 <exit>
+        printf("chmod: failed to change permissions for %s\n", argv[1]);
+  3e:	648c                	ld	a1,8(s1)
+  40:	00001517          	auipc	a0,0x1
+  44:	87050513          	addi	a0,a0,-1936 # 8b0 <malloc+0x124>
+  48:	690000ef          	jal	6d8 <printf>
+  4c:	b7f5                	j	38 <main+0x38>
 
 000000000000004e <start>:
 //
@@ -758,7 +762,7 @@ printint(int fd, int xx, int base, int sgn)
     buf[i++] = digits[x % base];
  39a:	2601                	sext.w	a2,a2
  39c:	00000517          	auipc	a0,0x0
- 3a0:	52c50513          	addi	a0,a0,1324 # 8c8 <digits>
+ 3a0:	54c50513          	addi	a0,a0,1356 # 8e8 <digits>
  3a4:	883a                	mv	a6,a4
  3a6:	2705                	addiw	a4,a4,1
  3a8:	02c5f7bb          	remuw	a5,a1,a2
@@ -1118,7 +1122,7 @@ vprintf(int fd, const char *fmt, va_list ap)
  630:	4941                	li	s2,16
     putc(fd, digits[x >> (sizeof(uint64) * 8 - 4)]);
  632:	00000b97          	auipc	s7,0x0
- 636:	296b8b93          	addi	s7,s7,662 # 8c8 <digits>
+ 636:	2b6b8b93          	addi	s7,s7,694 # 8e8 <digits>
  63a:	03c9d793          	srli	a5,s3,0x3c
  63e:	97de                	add	a5,a5,s7
  640:	0007c583          	lbu	a1,0(a5)
@@ -1155,7 +1159,7 @@ vprintf(int fd, const char *fmt, va_list ap)
  67e:	bbcd                	j	470 <vprintf+0x4a>
           s = "(null)";
  680:	00000917          	auipc	s2,0x0
- 684:	24090913          	addi	s2,s2,576 # 8c0 <malloc+0x134>
+ 684:	26090913          	addi	s2,s2,608 # 8e0 <malloc+0x154>
         for(; *s; s++)
  688:	02800593          	li	a1,40
  68c:	b7c5                	j	66c <vprintf+0x246>

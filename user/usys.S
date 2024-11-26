@@ -105,3 +105,8 @@ uptime:
  li a7, SYS_uptime
  ecall
  ret
+.global chmod
+chmod:
+ li a7, SYS_chmod
+ ecall
+ ret

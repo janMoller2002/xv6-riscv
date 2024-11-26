@@ -516,39 +516,40 @@ readi(struct inode *ip, int user_dst, uint64 dst, uint off, uint n)
 int
 writei(struct inode *ip, int user_src, uint64 src, uint off, uint n)
 {
-  uint tot, m;
-  struct buf *bp;
+    uint tot, m;
+    struct buf *bp;
 
-  // Verificar permisos: Sin permiso de escritura
-  if((ip->perm & 2) == 0) {
-    return -1; // Error por falta de permisos
-  }
-
-  if(off > ip->size || off + n < off)
-    return -1;
-  if(off + n > MAXFILE * BSIZE)
-    return -1;
-
-  for(tot = 0; tot < n; tot += m, off += m, src += m){
-    uint addr = bmap(ip, off / BSIZE);
-    if(addr == 0)
-      break;
-    bp = bread(ip->dev, addr);
-    m = min(n - tot, BSIZE - off % BSIZE);
-    if(either_copyin(bp->data + (off % BSIZE), user_src, src, m) == -1) {
-      brelse(bp);
-      break;
+    // Verificar si el archivo es inmutable o no tiene permiso de escritura
+    if(ip->perm == 5 || (ip->perm & 2) == 0) {
+        return -1; // Error: archivo inmutable o sin permiso de escritura
     }
-    log_write(bp);
-    brelse(bp);
-  }
 
-  if(off > ip->size)
-    ip->size = off;
+    if(off > ip->size || off + n < off)
+        return -1;
+    if(off + n > MAXFILE * BSIZE)
+        return -1;
 
-  iupdate(ip);
-  return tot;
+    for(tot = 0; tot < n; tot += m, off += m, src += m){
+        uint addr = bmap(ip, off / BSIZE);
+        if(addr == 0)
+            break;
+        bp = bread(ip->dev, addr);
+        m = min(n - tot, BSIZE - off % BSIZE);
+        if(either_copyin(bp->data + (off % BSIZE), user_src, src, m) == -1) {
+            brelse(bp);
+            break;
+        }
+        log_write(bp);
+        brelse(bp);
+    }
+
+    if(off > ip->size)
+        ip->size = off;
+
+    iupdate(ip);
+    return tot;
 }
+
 
 
 // Directories
